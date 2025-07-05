@@ -36,18 +36,28 @@ module uart_rx #(
 
                 STATE_IDLE: begin
                     o_valid_out <= 0;
-                    if (i_rx == 0) begin
+                    if (i_rx == 0) begin // Signals the START bit, ready to start receiving
                         r_state <= STATE_START;
                         r_clk_count <= 0;
                     end
                 end
 
                 STATE_START: begin
-                    
+                    if (r_clk_count == (CLK_PER_BIT >> 1)) begin
+                        if (i_rx == 0) begin // Checks again, 
+                            r_state <= STATE_DATA;
+                            r_clk_count <= 0;
+                            r_bit_index <= 0;
+                        end else begin
+                            r_state <= STATE_IDLE;  // Do I need this? Just in case of error perhaps?
+                        end
+                    end else begin
+                        r_clk_count <= r_clk_count + 1;
+                    end
                 end
 
                 STATE_DATA: begin
-
+                    
                 end
 
                 STATE_STOP: begin
