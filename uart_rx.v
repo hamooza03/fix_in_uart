@@ -46,7 +46,7 @@ module uart_rx #(
                 end
 
                 STATE_START: begin
-                    if (r_clk_count == (CLK_PER_BIT)) begin
+                    if (r_clk_count == CLK_PER_BIT) begin
                         if (i_rx == 0) begin // Checks again, 
                             r_state <= STATE_DATA;
                             r_clk_count <= 0;
@@ -62,25 +62,32 @@ module uart_rx #(
                 STATE_DATA: begin
                     if (r_clk_count == CLK_PER_BIT) begin
                         r_rx_shift[r_bit_index] <= i_rx;
+                        r_clk_count <= 0; // Reset clock count
                         if (r_bit_index == 7) begin
                             r_state <= STATE_STOP; // We received a full byte
+                        end else begin
+                            r_bit_index <= r_bit_index + 1; // Increment bit index
+                        end
                     end else begin
-                        r_bit_index <= r_bit_index + 1; // Increment bit index
+                        r_clk_count <= r_clk_count + 1; // Increment clock count
                     end
 
                 end
 
                 STATE_STOP: begin
-                    if (r_clk_count == CLK_PER_BIT) begin
+                    if (r_clk_count == CLK_PER_BIT && i_rx == 1) begin
                         o_data_out <= r_rx_shift; // Output the received byte
                         o_valid_out <= 1; // Signal that the data is valid
                         r_state <= STATE_IDLE; // Go back to idle state
                         r_clk_count <= 0; // Reset clock count
+                        r_bit_index <= 0; // Reset bit index
                     end else begin
                         r_clk_count <= r_clk_count + 1; // Increment clock count
                     end
                 end
 
+            default: r_state <= STATE_IDLE; 
+            endcase
 
         end
 
